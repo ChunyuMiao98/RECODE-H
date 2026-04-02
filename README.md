@@ -130,7 +130,19 @@ conda activate recode
 pip install -r requirements.txt
 ```
 
-### 2. Build Task Environments
+### 2. Download Dataset
+
+The benchmark dataset (~7.7 GB, 102 tasks) is hosted on HuggingFace:
+
+```bash
+huggingface-cli download mcy98/RECODE-H \
+  --repo-type dataset \
+  --local-dir work_dir/dataset
+```
+
+This will populate `work_dir/dataset/` with `annotation_meta.jsonl` and all per-task `annotations/` directories.
+
+### 3. Build Task Environments
 
 Each benchmark task executes inside its own conda environment to satisfy the paper-specific dependencies. Build all environments at once:
 
@@ -151,7 +163,7 @@ python scripts/verify_envs_via_test_sh.py \
   --dataset-dir work_dir/dataset
 ```
 
-### 3. Configure API Keys
+### 4. Configure API Keys
 
 Copy the default config and fill in your credentials:
 
