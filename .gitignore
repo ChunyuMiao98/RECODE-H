@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs and output
+*.log
+*.pkl
+*.pdf
+*.png
+
+# Environment / secrets
+.env
+*.env
+config/secrets.yaml
+
+# Cache
+.pytest_cache/
+.cache/
+work_dir/cache/
+
+# Dataset — annotation task files are too large for git (7GB+).
+# Only annotation_meta.jsonl and env install scripts are tracked.
+# Full dataset: [TODO: add download link, e.g. HuggingFace / Zenodo]
+work_dir/dataset/annotations/
+work_dir/dataset/install_logs/
+work_dir/dataset/restore_from_backup_logs/
+conda_env_backups/
+install_all_logs/
+
+# Experiment outputs
+experiment_results/
+output_dir/
+expriment_result/
+init_seed/
+seeds/
+
+# IDE
+.vscode/
+.idea/

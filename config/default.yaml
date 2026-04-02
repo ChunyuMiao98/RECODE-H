@@ -1,0 +1,185 @@
+# =============================================================================
+# RCGBench Default Configuration
+# =============================================================================
+# Copy this file and fill in your API credentials before running experiments.
+# Usage:
+#   python agent/research_code_generation.py --yaml-location config/default.yaml
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Code Agent — the model that generates and edits code
+# -----------------------------------------------------------------------------
+
+# API key for the code generation model.
+# Depending on api-provider:
+#   - openai / azure-openai : your OpenAI or Azure OpenAI key
+#   - anthropic             : your Anthropic key (https://console.anthropic.com)
+#   - gemini                : your Google AI Studio key (https://aistudio.google.com)
+#   - together              : your Together AI key (for open-source models, e.g. LLaMA)
+api-key: "YOUR_API_KEY"
+
+# API provider for the code generation model.
+# Options: "openai" | "anthropic" | "gemini" | "azure-openai" | "together"
+api-provider: "openai"
+
+# Model name for code generation.
+# Examples:
+#   openai       : "gpt-4o", "gpt-4.1", "gpt-4.1-mini"
+#   anthropic    : "claude-sonnet-4-20250514", "claude-opus-4-20250514"
+#   gemini       : "gemini-2.0-flash", "gemini-2.5-pro"
+#   azure-openai : the deployment name configured in your Azure resource
+#   together     : "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+model: "gpt-4o"
+
+# Deployment name — required only when api-provider is "azure-openai".
+# Must match the deployment name you configured in your Azure OpenAI resource.
+# Leave empty for all other providers.
+deployment: ""
+
+# API endpoint — required only when api-provider is "azure-openai".
+# Format: "https://<your-resource-name>.openai.azure.com/"
+# Leave empty for all other providers.
+endpoint: ""
+
+# API version — required only when api-provider is "azure-openai".
+# Example: "2024-12-01-preview"
+# Leave empty for all other providers.
+api-version: ""
+
+
+# -----------------------------------------------------------------------------
+# Human Agent — the model that analyzes test failures and generates structured
+# feedback for the Code Agent. We recommend a strong reasoning model here.
+# -----------------------------------------------------------------------------
+
+# API key for the feedback model.
+human-api-key: "YOUR_API_KEY"
+
+# API provider for the feedback model.
+# Options: "openai" | "anthropic" | "gemini" | "azure-openai"
+human-api-provider: "openai"
+
+# Model name for the feedback model.
+# Recommended: a reasoning-focused model such as "o4-mini" or "o3".
+human-agent-model: "o4-mini"
+
+# Deployment name — required only when human-api-provider is "azure-openai".
+human-deployment: ""
+
+# API endpoint — required only when human-api-provider is "azure-openai".
+human-endpoint: ""
+
+# API version — required only when human-api-provider is "azure-openai".
+human-api-version: ""
+
+
+# -----------------------------------------------------------------------------
+# Feedback & Guidance Settings
+# -----------------------------------------------------------------------------
+
+# Guidance level: controls how much information the Human Agent includes in
+# each round of feedback to the Code Agent.
+#
+#   0 — No feedback. The agent only knows whether the tests passed or failed.
+#   1 — Error description: which interface failed and a brief description.
+#   2 — Level 1 + root cause analysis of the failure.
+#   3 — Level 2 + actionable suggestions for fixing the code.
+#   4 — Level 3 + direct code correction (the most informative setting).
+#
+# The paper sweeps levels 0–4 to study the effect of feedback granularity.
+guidance-level: 4
+
+# Guidance type: how the guidance level is applied across turns.
+#   "fixed"   — the same guidance level is used every turn (default, used in paper).
+#   "dynamic" — (not yet implemented) level adapts based on agent progress.
+guidance-type: "fixed"
+
+
+# -----------------------------------------------------------------------------
+# Evaluation Setting
+# -----------------------------------------------------------------------------
+
+# Selects which evaluation mode to run.
+#
+#   "baseline"     — Direct LLM generation without agent tools. The model
+#                    receives the task description and outputs code in one shot
+#                    per turn, receives feedback, then retries. No tool use.
+#
+#   "agent"        — The Code Agent uses a set of tools (view, edit, submit,
+#                    etc.) to iteratively construct its solution within each
+#                    turn. No persistent memory across feedback turns.
+#
+#   "memory_agent" — Same as "agent" but with explicit cross-turn memory.
+#                    Conversation history is summarized and carried forward,
+#                    allowing the agent to learn from previous feedback turns.
+#                    This is the primary setting reported in the paper.
+evaluation-setting: "memory_agent"
+
+# Maximum number of feedback-refinement turns (outer loop).
+# One turn = Code Agent generates code → tests run → feedback → repeat.
+# Paper uses: 10
+max-turn: 10
+
+# Maximum number of agent action steps within a single turn (inner loop).
+# One step = the agent issues one tool action (e.g., edit a function, view a file).
+# Paper uses: 3
+max-steps: 3
+
+
+# -----------------------------------------------------------------------------
+# Memory Management  (applies to "memory_agent" only)
+# -----------------------------------------------------------------------------
+
+# When the conversation history length exceeds this number of messages, the
+# agent summarizes the older portion to stay within the model's context window.
+memory-threshold: 15
+
+# Number of most-recent messages to keep verbatim after summarization.
+# Older messages are condensed into a single summary message prepended to history.
+memory-to-keep: 10
+
+
+# -----------------------------------------------------------------------------
+# Paths
+# -----------------------------------------------------------------------------
+
+# Root directory containing the benchmark dataset.
+# Expected layout:
+#   <work-dir>/dataset/annotation_meta.jsonl
+#   <work-dir>/dataset/annotations/annotation_<id>/
+work-dir: "work_dir"
+
+# Directory where per-task result files (.pkl) are written.
+# Files are organized as:
+#   <output-dir>/<setting>_<model>_feedback_<type>_guidance_<level>/task_<id>_result.pkl
+output-dir: "experiment_results"
+
+# Directory that caches the shared turn-0 "seed" result.
+# When sweeping guidance levels, turn 0 (no prior feedback) is run once and
+# its output is reused across all levels to ensure a fair, identical starting
+# point and to avoid redundant API calls.
+init_seed: "init_seed"
+
+
+# -----------------------------------------------------------------------------
+# Run Control
+# -----------------------------------------------------------------------------
+
+# If true, resume an interrupted run: load the last saved result for each task
+# and continue from that turn onward.
+# If false (default), any task that already has a completed result file is skipped.
+resume: false
+
+# (Optional) Restrict the run to a specific subset of task IDs.
+# If omitted, all tasks where if_test == true in annotation_meta.jsonl are used.
+# Example:
+#   task-ids: [1, 5, 12, 42]
+task-ids:
+
+# (Optional) Replay an existing run at a different guidance level without
+# re-running code generation. Useful for ablation studies at low API cost.
+# Set to an integer (0–4) to enable replay at that guidance level.
+# Requires a completed result .pkl for the target tasks to already exist.
+# Leave empty (null) to disable.
+replay-feedback-level:
