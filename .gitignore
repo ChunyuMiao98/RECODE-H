@@ -22,7 +22,7 @@ env/
 *.log
 *.pkl
 *.pdf
-*.png
+
 
 # Environment / secrets
 .env
